@@ -1,0 +1,158 @@
+/* Vice Coast Cover Lab — editor chrome. The cover art itself is drawn on canvas in src/cover.js. */
+@font-face {
+  font-family: 'Anton';
+  src: url('./fonts/Anton-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pacifico';
+  src: url('./fonts/Pacifico-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+:root {
+  --ink: #14081f;
+  --panel: #1e0f2e;
+  --panel-2: #261338;
+  --line: #3d2354;
+  --text: #f6ecff;
+  --muted: #c9aede;
+  --pink: #ff2e88;
+  --orange: #ff7a1a;
+  --gold: #ffc93c;
+  --teal: #19e3d6;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: linear-gradient(160deg, #160a24 0%, #1e0f2e 55%, #2b1030 100%);
+  color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(20, 8, 31, 0.7);
+  flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  display: grid; place-items: center;
+  width: 46px; height: 46px; border-radius: 10px;
+  font-family: 'Anton', sans-serif; font-size: 20px; letter-spacing: 1px;
+  color: #14081f;
+  background: linear-gradient(135deg, var(--gold), var(--orange) 45%, var(--pink));
+}
+.brand h1 {
+  margin: 0; font-family: 'Anton', sans-serif; font-weight: 400;
+  font-size: 24px; letter-spacing: 2px; text-transform: uppercase;
+  background: linear-gradient(90deg, var(--gold), var(--orange), var(--pink));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+button {
+  font: inherit; color: var(--text);
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--pink); }
+button.picked {
+  background: linear-gradient(135deg, rgba(255, 122, 26, 0.35), rgba(255, 46, 136, 0.35));
+  border-color: var(--pink);
+}
+button:disabled { opacity: 0.45; cursor: default; }
+
+.workspace {
+  display: grid; grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px; padding: 18px 20px; align-items: start;
+}
+.stage { min-width: 0; }
+.canvas-wrap {
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  background: #0d0518; display: grid; place-items: center; padding: 10px;
+}
+#preview { max-width: 100%; max-height: 78vh; width: auto; height: auto; border-radius: 6px; }
+.hint { color: var(--muted); font-size: 13px; margin: 10px 2px 0; }
+.panel-tray { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.panel-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 8px; padding: 6px 8px; font-size: 13px;
+}
+.panel-chip.selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.panel-chip select {
+  background: var(--panel-2); color: var(--text);
+  border: 1px solid var(--line); border-radius: 6px; padding: 4px;
+  max-width: 130px;
+}
+
+.controls { display: flex; flex-direction: column; gap: 14px; }
+.group {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px; padding: 14px;
+}
+.group h2 { margin: 0 0 10px; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); }
+.button-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.controls label { display: block; font-size: 13px; color: var(--muted); margin: 8px 0; }
+.controls input[type="text"] {
+  display: block; width: 100%; margin-top: 4px;
+  background: #12081f; color: var(--text);
+  border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; font: inherit;
+}
+.controls input[type="text"]:focus { outline: 2px solid var(--pink); outline-offset: 1px; }
+.stars { display: inline-flex; gap: 2px; margin-left: 6px; }
+.stars button {
+  background: none; border: none; padding: 2px 4px;
+  font-size: 22px; color: #5b3a75; line-height: 1;
+}
+.stars button.lit { color: var(--gold); text-shadow: 0 0 10px rgba(255, 201, 60, 0.8); }
+.file-btn {
+  display: block; text-align: center; cursor: pointer;
+  background: linear-gradient(135deg, rgba(255, 122, 26, 0.25), rgba(255, 46, 136, 0.25));
+  border: 1px dashed var(--pink); border-radius: 8px; padding: 10px;
+  color: var(--text); font-size: 14px;
+}
+.file-btn input { display: none; }
+.photo-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.photo-thumb {
+  width: 64px; height: 64px; object-fit: cover;
+  border-radius: 8px; border: 2px solid var(--line); cursor: pointer;
+}
+.photo-thumb.active { border-color: var(--teal); }
+.note { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+.toggles { display: flex; gap: 14px; flex-wrap: wrap; }
+.toggles label { display: inline-flex; align-items: center; gap: 6px; margin: 0; color: var(--text); }
+.sliders span { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; }
+.sliders input[type="range"] { flex: 1; accent-color: var(--pink); }
+.export-grid { grid-template-columns: 1fr 1fr; }
+.export-btn { font-weight: 600; }
+.export-all {
+  width: 100%; margin-top: 10px; padding: 12px;
+  font-weight: 700; font-size: 15px; color: #14081f;
+  background: linear-gradient(90deg, var(--gold), var(--orange), var(--pink));
+  border: none;
+}
+#status { color: var(--teal); font-size: 13px; min-height: 18px; margin: 10px 0 0; }
+.foot { padding: 0 20px 20px; color: var(--muted); font-size: 12px; }
+
+/* Screenshot scenes: ?shot=cover hides the editor chrome and shows the cover full-frame. */
+body.shot-cover .topbar,
+body.shot-cover .controls,
+body.shot-cover .hint,
+body.shot-cover .panel-tray,
+body.shot-cover .foot { display: none; }
+body.shot-cover { background: #0d0518; }
+body.shot-cover .workspace { display: block; padding: 0; }
+body.shot-cover .stage { width: 100%; }
+body.shot-cover .canvas-wrap { border: none; border-radius: 0; padding: 0; background: #0d0518; }
+body.shot-cover #preview { max-height: none; max-width: 100vw; border-radius: 0; }
+
+@media (max-width: 900px) {
+  .workspace { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vice Coast Cover Lab — GTA 6-style cover art maker</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">VC</span>
+    <div>
+      <h1>Vice Coast Cover Lab</h1>
+      <p>Turn your photos into GTA-style cover art — offline, nothing leaves your machine.</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button id="undoBtn" type="button" title="Undo (Ctrl+Z)">↩ Undo</button>
+    <button id="redoBtn" type="button" title="Redo (Ctrl+Shift+Z)">↪ Redo</button>
+    <button id="shuffleBtn" type="button" title="Random layout, grade and photos">🎲 Surprise me</button>
+  </div>
+</header>
+
+<main class="workspace">
+  <section class="stage">
+    <div class="canvas-wrap">
+      <canvas id="preview" width="900" height="900" aria-label="Live cover preview"></canvas>
+    </div>
+    <p class="hint">Click a panel to select it — drag inside it to move the photo, scroll to zoom. Every change updates the cover live.</p>
+    <div class="panel-tray" id="panelTray" aria-label="Panels"></div>
+  </section>
+
+  <aside class="controls">
+    <section class="group">
+      <h2>1 · Layout</h2>
+      <div class="button-grid" id="layoutPicker">
+        <button type="button" data-layout="nine" class="picked">Nine-panel grid</button>
+        <button type="button" data-layout="hero">Hero + three</button>
+        <button type="button" data-layout="fullbleed">Full-bleed</button>
+        <button type="button" data-layout="snapshots">Tilted snapshots</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>2 · Sunset grade</h2>
+      <div class="button-grid" id="gradePicker">
+        <button type="button" data-grade="sunset" class="picked">Vice Sunset</button>
+        <button type="button" data-grade="neon">Neon Night</button>
+        <button type="button" data-grade="golden">Golden Hour</button>
+        <button type="button" data-grade="candy">Candy Pop</button>
+        <button type="button" data-grade="dusk">Teal Dusk</button>
+        <button type="button" data-grade="ink">Inked Poster</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>3 · Lettering</h2>
+      <label>Title <input id="titleInput" type="text" maxlength="24" value="NEON SHORE"></label>
+      <label>Script subtitle <input id="subtitleInput" type="text" maxlength="32" value="vice coast nights"></label>
+      <label>Caption <input id="captionInput" type="text" maxlength="48" value="Boulevard Queen"></label>
+      <label>Badge ribbon <input id="badgeInput" type="text" maxlength="20" value="LAUNCH WEEK"></label>
+      <label>Star heat
+        <span class="stars" id="heatStars">
+          <button type="button" data-heat="1" aria-label="1 star">★</button><button type="button" data-heat="2" aria-label="2 stars">★</button><button type="button" data-heat="3" aria-label="3 stars">★</button><button type="button" data-heat="4" aria-label="4 stars" class="lit">★</button><button type="button" data-heat="5" aria-label="5 stars">★</button>
+        </span>
+      </label>
+    </section>
+
+    <section class="group">
+      <h2>4 · Photos</h2>
+      <label class="file-btn">＋ Add your photos
+        <input id="photoInput" type="file" accept="image/*" multiple>
+      </label>
+      <div class="photo-list" id="photoList"></div>
+      <p class="note">Your photos never leave this page. Two sample photos are loaded so you can try it right away.</p>
+    </section>
+
+    <section class="group">
+      <h2>5 · Finish</h2>
+      <div class="toggles">
+        <label><input id="grainToggle" type="checkbox" checked> Film grain</label>
+        <label><input id="vignetteToggle" type="checkbox" checked> Vignette</label>
+        <label><input id="halftoneToggle" type="checkbox"> Halftone dots</label>
+      </div>
+      <label>Selected panel
+        <span class="sliders">
+          <span>Zoom <input id="zoomSlider" type="range" min="100" max="300" value="100"></span>
+          <span>Across <input id="panXSlider" type="range" min="-100" max="100" value="0"></span>
+          <span>Up / down <input id="panYSlider" type="range" min="-100" max="100" value="0"></span>
+        </span>
+      </label>
+    </section>
+
+    <section class="group export-group">
+      <h2>Export PNG</h2>
+      <div class="button-grid export-grid">
+        <button type="button" class="export-btn" data-size="1080x1080">■ Square · 1080 × 1080</button>
+        <button type="button" class="export-btn" data-size="1080x1350">▯ Portrait · 1080 × 1350</button>
+        <button type="button" class="export-btn" data-size="1920x1080">▭ Wide · 1920 × 1080</button>
+        <button type="button" class="export-btn" data-size="1080x1920">▯ Story · 1080 × 1920</button>
+      </div>
+      <button type="button" class="export-all" id="exportAllBtn">Export all four sizes</button>
+      <p id="status" role="status"></p>
+    </section>
+  </aside>
+</main>
+
+<footer class="foot">
+  <p>Original art made on your machine. Fonts Anton &amp; Pacifico under the SIL Open Font License (see app/fonts/). No Rockstar Games logo, artwork or fonts.</p>
+</footer>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
