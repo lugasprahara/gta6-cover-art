@@ -1,5 +1,9 @@
 # Chrome Coast — GTA-style cover art studio
 
+[![make.fun · gta6-cover-art-01](https://make.fun/badge/gta6-cover-art-01.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
+[![rank](https://make.fun/badge/gta6-cover-art-01/lugasprahara/gta6-cover-art/rank.svg)](https://make.fun/bounty/gta6-cover-art-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
+[![reward](https://make.fun/badge/gta6-cover-art-01/lugasprahara/gta6-cover-art/reward.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
+
 **Chrome Coast** turns your photo and a caption into GTA-style cover art: a full-bleed multi-panel poster with a giant chrome title laid over the art, a label on every panel, poster furniture (review-quote strip, starburst seal, tagline ribbon, credits footer, barcode) and a cinematic sunset or neon grade — exported as a PNG in the common post sizes.
 
 An entry for make.fun's [“Make GTA 6 Cover Art” bounty](https://make.fun/bounty/gta6-cover-art-01) — $250 in USDC, escrowed.
