@@ -1,67 +1,113 @@
-// Golden Hour Studio — cinematic colour grades.
-// Each grade is a luminance ramp (deep coloured shadows -> hot highlights) that a
-// panel's pixels are mapped through, then mixed back with the original so photos
-// still read as photos. `mix` is the grade's full-strength blend; the editor's
-// grade-strength slider scales it per cover. No duotone: highlights stay warm and
-// skin tones survive because the ramp passes through natural mid-tones.
-/** @type {Record<string, {name: string, mix: number, sat: number, stops: Array<[number, [number, number, number]]>}>} */
+// Cinematic colour grades and print-style finishing for Chrome Coast covers.
+// A grade is a luminance gradient map (deep coloured shadows -> hot mids -> glowing highlights)
+// blended over the painted/photographed art, plus a saturation lift. Finishing adds seeded grain,
+// a halftone dot screen and a vignette — all deterministic, all computed in the browser.
+
+import { rng } from './scenes.js';
+
+/** Grade definitions: shadow / mid / highlight colours the luminance ramp runs through. */
 export const GRADES = {
-  sunset: {
-    name: 'Sunset Boulevard', mix: 0.55, sat: 1.18,
-    stops: [[0, [26, 8, 52]], [0.3, [96, 26, 104]], [0.55, [196, 62, 110]], [0.78, [255, 122, 40]], [1, [255, 216, 110]]],
-  },
-  neonNight: {
-    name: 'Neon Night', mix: 0.58, sat: 1.22,
-    stops: [[0, [8, 8, 44]], [0.3, [26, 44, 116]], [0.55, [24, 150, 178]], [0.78, [226, 62, 150]], [1, [255, 178, 226]]],
-  },
-  goldenHour: {
-    name: 'Golden Hour', mix: 0.5, sat: 1.12,
-    stops: [[0, [34, 18, 10]], [0.3, [116, 62, 24]], [0.55, [206, 118, 34]], [0.8, [255, 182, 72]], [1, [255, 244, 186]]],
-  },
-  tropicTeal: {
-    name: 'Tropic Teal', mix: 0.52, sat: 1.15,
-    stops: [[0, [6, 26, 44]], [0.3, [10, 84, 108]], [0.55, [22, 168, 160]], [0.8, [120, 216, 160]], [1, [240, 252, 210]]],
-  },
+  sunset: { name: 'Sunset chrome', shadows: [38, 16, 74], mids: [226, 84, 62], highlights: [255, 215, 110] },
+  neon: { name: 'Neon night', shadows: [8, 10, 52], mids: [198, 42, 110], highlights: [139, 233, 255] },
+  golden: { name: 'Golden hour', shadows: [46, 27, 10], mids: [201, 123, 45], highlights: [255, 236, 176] },
+  teal: { name: 'Tropic teal', shadows: [5, 44, 54], mids: [31, 158, 143], highlights: [234, 255, 246] },
 };
 
-/** Interpolates one grade's ramp at luminance t (0..1) into [r, g, b]. */
-export function gradeColorAt(gradeName, t) {
-  const stops = GRADES[gradeName].stops;
-  if (t <= stops[0][0]) return stops[0][1];
-  for (let i = 1; i < stops.length; i++) {
-    if (t <= stops[i][0]) {
-      const [p0, c0] = stops[i - 1];
-      const [p1, c1] = stops[i];
-      const f = (t - p0) / (p1 - p0);
-      return [c0[0] + (c1[0] - c0[0]) * f, c0[1] + (c1[1] - c0[1]) * f, c0[2] + (c1[2] - c0[2]) * f];
-    }
-  }
-  return stops[stops.length - 1][1];
+function rampColor(grade, t) {
+  const [a, b] = t < 0.5 ? [grade.shadows, grade.mids] : [grade.mids, grade.highlights];
+  const u = t < 0.5 ? t * 2 : (t - 0.5) * 2;
+  return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u];
 }
 
 /**
- * Applies a grade in place to a 2D context's pixels: saturation/contrast shaping,
- * then the luminance ramp mixed at `strength` (0..1 of the grade's own mix).
+ * Applies the gradient-map grade to a whole canvas in place.
+ * strength 0 leaves the art untouched; 1 is the full cinematic look.
  */
-export function applyGradeToContext(ctx2d, w, h, gradeName, strength) {
-  const grade = GRADES[gradeName];
-  const mix = grade.mix * Math.max(0, Math.min(1, strength));
-  const data = ctx2d.getImageData(0, 0, w, h);
-  const px = data.data;
-  for (let i = 0; i < px.length; i += 4) {
-    const r0 = px[i], g0 = px[i + 1], b0 = px[i + 2];
-    let lum = (0.299 * r0 + 0.587 * g0 + 0.114 * b0) / 255;
-    // Gentle S-curve so shadows sink and highlights bloom before the ramp.
-    lum = lum * lum * (3 - 2 * lum) * 0.35 + lum * 0.65;
-    const [gr, gg, gb] = gradeColorAt(gradeName, lum);
-    let r = r0 * (1 - mix) + gr * mix;
-    let g = g0 * (1 - mix) + gg * mix;
-    let b = b0 * (1 - mix) + gb * mix;
-    const avg = (r + g + b) / 3;
-    r = avg + (r - avg) * grade.sat;
-    g = avg + (g - avg) * grade.sat;
-    b = avg + (b - avg) * grade.sat;
-    px[i] = r; px[i + 1] = g; px[i + 2] = b;
+export function applyGrade(canvas, gradeId, strength) {
+  if (strength <= 0.01) return;
+  const grade = GRADES[gradeId] ?? GRADES.sunset;
+  const ctx = canvas.getContext('2d');
+  const { width: w, height: h } = canvas;
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  const lut = new Array(256);
+  for (let i = 0; i < 256; i++) lut[i] = rampColor(grade, i / 255);
+  const mapMix = strength * 0.62;
+  const sat = 1 + strength * 0.28;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const lum = Math.max(0, Math.min(255, Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b)));
+    const mc = lut[lum];
+    let nr = r + (mc[0] - r) * mapMix;
+    let ng = g + (mc[1] - g) * mapMix;
+    let nb = b + (mc[2] - b) * mapMix;
+    const grey = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb;
+    nr = grey + (nr - grey) * sat;
+    ng = grey + (ng - grey) * sat;
+    nb = grey + (nb - grey) * sat;
+    d[i] = nr; d[i + 1] = ng; d[i + 2] = nb;
   }
-  ctx2d.putImageData(data, 0, 0);
+  ctx.putImageData(img, 0, 0);
+}
+
+/** Seeded film grain: the same noise every render, so exports never shimmer between runs. */
+export function applyGrain(canvas, strength) {
+  if (strength <= 0.01) return;
+  const ctx = canvas.getContext('2d');
+  const { width: w, height: h } = canvas;
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  const rand = rng(987654321);
+  const amp = strength * 26;
+  for (let i = 0; i < d.length; i += 4) {
+    const n = (rand() - 0.5) * 2 * amp;
+    d[i] += n; d[i + 1] += n; d[i + 2] += n;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+/** Halftone dot screen sampled from the cover's own luminance — bigger dots in the shadows. */
+export function applyHalftone(canvas, strength) {
+  if (strength <= 0.01) return;
+  const { width: w, height: h } = canvas;
+  const ctx = canvas.getContext('2d');
+  const cell = Math.max(4, Math.round(w / 160));
+  const sw = Math.ceil(w / cell);
+  const sh = Math.ceil(h / cell);
+  const probe = document.createElement('canvas');
+  probe.width = sw; probe.height = sh;
+  const pctx = probe.getContext('2d');
+  pctx.drawImage(canvas, 0, 0, sw, sh);
+  const data = pctx.getImageData(0, 0, sw, sh).data;
+  ctx.save();
+  ctx.fillStyle = 'rgba(14, 6, 26, 0.8)';
+  for (let y = 0; y < sh; y++) {
+    for (let x = 0; x < sw; x++) {
+      const i = (y * sw + x) * 4;
+      const lum = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
+      const r = (1 - lum) * cell * 0.6 * strength;
+      if (r < 0.45) continue;
+      ctx.beginPath();
+      ctx.arc(x * cell + cell / 2, y * cell + cell / 2, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+/** Soft dark vignette so the poster's edges fall away and the centre pops. */
+export function applyVignette(canvas, strength = 0.5) {
+  const { width: w, height: h } = canvas;
+  const ctx = canvas.getContext('2d');
+  const r = Math.hypot(w, h) / 2;
+  const g = ctx.createRadialGradient(w / 2, h / 2, r * 0.42, w / 2, h / 2, r);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.72, 'rgba(238,232,248,1)');
+  g.addColorStop(1, 'rgba(118,104,148,1)');
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.globalAlpha = strength;
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
 }
