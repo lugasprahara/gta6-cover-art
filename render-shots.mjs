@@ -1,6 +1,8 @@
-// Renders screenshots/ from shots.json: serves app/ with serve.ts, drives the
-// Playwright-cached headless Chromium over CDP, and captures each ?shot= scene
-// as a JPEG inside the gate limits (<=256 KiB, long side <=1280, short >=480).
+// Golden Hour Studio — renders screenshots/ from shots.json.
+// Serves app/ with serve.ts, drives the Playwright-cached headless Chromium
+// over CDP, waits for each ?shot= scene to paint, and captures it as a JPEG
+// inside the gate limits (<=256 KiB, long side <=1280, short side >=480).
+// The captures are the app's own renders, never edited afterwards.
 // Usage: node render-shots.mjs   (run from the repository root)
 import { spawn, execSync } from 'node:child_process';
 import { writeFileSync, readFileSync, existsSync, unlinkSync } from 'node:fs';
@@ -88,7 +90,7 @@ try {
     }, sessionId);
     await cdp.send('Page.navigate', { url }, sessionId);
     let ready = false;
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 120; i++) {
       await sleep(300);
       const { result } = await cdp.send('Runtime.evaluate', {
         expression: 'window.__shotReady === true', returnByValue: true,
