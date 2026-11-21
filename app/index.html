@@ -3,101 +3,63 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Chrome Coast — GTA-style cover studio</title>
+<title>Chrome Coast — GTA-style cover art studio</title>
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<header class="topbar">
+<header class="app-header">
   <div class="brand">
-    <span class="brand-mark" aria-hidden="true"></span>
-    <span class="brand-name">CHROME&nbsp;COAST</span>
-    <span class="brand-sub">GTA-style cover studio</span>
+    <h1>CHROME COAST</h1>
+    <p>Turn a photo and a caption into GTA-style cover art. Offline, in your browser.</p>
   </div>
-  <nav class="steps" aria-label="Workflow">
-    <button type="button" class="step is-on" data-step="photos">1 · Photos</button>
-    <button type="button" class="step" data-step="design">2 · Design</button>
-    <button type="button" class="step" data-step="export">3 · Export</button>
-  </nav>
-  <div class="history">
-    <button type="button" id="btnUndo" title="Undo">↩ Undo</button>
-    <button type="button" id="btnRedo" title="Redo">Redo ↪</button>
-  </div>
+  <ol class="steps" aria-label="Workflow">
+    <li><strong>1</strong> Photos</li>
+    <li><strong>2</strong> Caption &amp; layout</li>
+    <li><strong>3</strong> Export PNG</li>
+  </ol>
 </header>
-
-<main class="layout">
-  <aside class="rail rail-left">
-    <section class="card" id="sec-photos">
-      <h2>Photos &amp; art</h2>
-      <label class="upload">
-        <input id="upload" type="file" accept="image/*">
-        <span>＋ Add your photo</span>
-      </label>
-      <p class="hint">Or build from the built-in library — starter photos, detail crops and painted scenes, all offline.</p>
-      <div class="artlib" id="artLib"></div>
+<main class="app">
+  <aside class="controls">
+    <section>
+      <h2>1 · Preset</h2>
+      <div id="presets" class="presets"></div>
     </section>
-    <section class="card">
-      <h2>Sample covers</h2>
-      <p class="hint">Four ready-made covers — different stories, layouts and grades.</p>
-      <div class="presets" id="presetRow"></div>
+    <section>
+      <h2>Photos &amp; scenes</h2>
+      <p class="hint">Click a thumbnail to swap it into the selected panel.</p>
+      <div id="pool" class="pool"></div>
     </section>
-  </aside>
-
-  <section class="stage-wrap">
-    <canvas id="stage" width="1080" height="1080" aria-label="Cover preview"></canvas>
-    <p class="hint stage-hint">Click a panel on the cover to edit it. Drag a panel to reposition its art.</p>
-  </section>
-
-  <aside class="rail rail-right">
-    <section class="card" id="sec-design">
-      <h2>Design</h2>
+    <section>
+      <h2>2 · Caption</h2>
+      <label>Title <input id="title" type="text" maxlength="30" value="CHROME / COAST"></label>
+      <label>Script subtitle <input id="subtitle" type="text" maxlength="30" value="vice city nights"></label>
       <h3>Layout</h3>
-      <div class="thumbrow" id="layoutRow"></div>
-      <h3>Colour grade</h3>
-      <div class="chips" id="gradeRow"></div>
-      <label class="field">Title <input id="inTitle" type="text" maxlength="26"></label>
-      <label class="field">Script subtitle <input id="inSubtitle" type="text" maxlength="34"></label>
-      <label class="field">Review quote <input id="inQuote" type="text" maxlength="64"></label>
-      <label class="field">Tagline ribbon <input id="inTagline" type="text" maxlength="44"></label>
-      <label class="field">Edition tag <input id="inVol" type="text" maxlength="22"></label>
+      <div id="layouts" class="layouts"></div>
+      <h3>Panels — click one to edit it</h3>
+      <div id="panel-list" class="panel-list"></div>
     </section>
-
-    <section class="card">
-      <h2>Panel editor</h2>
-      <div class="paneltabs" id="panelTabs"></div>
-      <label class="field">Art
-        <select id="selArt"></select>
-      </label>
-      <label class="field">Label <input id="inLabel" type="text" maxlength="40"></label>
-      <label class="slider">Zoom <input id="rgZoom" type="range" min="1" max="2.6" step="0.01"><span id="vZoom"></span></label>
-      <label class="slider">Pan ↔ <input id="rgPanX" type="range" min="-1" max="1" step="0.01"><span id="vPanX"></span></label>
-      <label class="slider">Pan ↕ <input id="rgPanY" type="range" min="-1" max="1" step="0.01"><span id="vPanY"></span></label>
-    </section>
-
-    <section class="card">
+    <section>
       <h2>Look</h2>
-      <label class="slider">Grade <input id="rgGrade" type="range" min="0" max="1" step="0.01"><span id="vGrade"></span></label>
-      <label class="slider">Grain <input id="rgGrain" type="range" min="0" max="1" step="0.01"><span id="vGrain"></span></label>
-      <label class="slider">Halftone <input id="rgHalftone" type="range" min="0" max="1" step="0.01"><span id="vHalftone"></span></label>
-      <label class="slider">Glow <input id="rgGlow" type="range" min="0" max="1" step="0.01"><span id="vGlow"></span></label>
+      <label>Grain <input id="grain" type="range" min="0" max="100" value="70"></label>
+      <label>Halftone <input id="halftone" type="range" min="0" max="100" value="50"></label>
+      <label>Glow <input id="glow" type="range" min="0" max="100" value="50"></label>
+      <label>Grade <input id="grade" type="range" min="0" max="100" value="100"></label>
     </section>
-
-    <section class="card" id="sec-export">
-      <h2>Export</h2>
-      <label class="field">Post size
-        <select id="selSize">
-          <option value="1080x1080">Square · 1080 × 1080</option>
-          <option value="1080x1350">Portrait · 1080 × 1350</option>
-          <option value="1920x1080">Landscape · 1920 × 1080</option>
-          <option value="1080x1920">Story · 1080 × 1920</option>
-        </select>
-      </label>
-      <button type="button" class="big" id="btnExport">Export PNG</button>
-      <button type="button" class="ghost" id="btnExportAll">Export all 4 sizes</button>
-      <p class="status" id="status" role="status"></p>
+    <section>
+      <h2>3 · Export</h2>
+      <div id="sizes" class="sizes"></div>
+      <div class="export-row">
+        <button id="export" type="button">Export PNG</button>
+        <button id="export-all" type="button">Export all 4 sizes</button>
+      </div>
+      <p id="status" role="status"></p>
     </section>
   </aside>
+  <section class="stage-wrap">
+    <p id="size-label" class="size-label">Square · 1080 × 1080</p>
+    <canvas id="stage" width="1080" height="1080" aria-label="Cover preview"></canvas>
+  </section>
 </main>
-
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>
